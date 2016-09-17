@@ -7,15 +7,23 @@ max_energy = 100
 chance_initial_atom = 0.10
 
 # Output Settigns
-tick_counter, frame_counter, ticks_per_frame = 0, 0, 10
-max_frames = 250
+output_directory_prefix = "../output/"
+tick_counter, frame_counter, ticks_per_frame = 0, 0, 2
+max_frames = 1500
 
-canvas_size = 64
+canvas_size = 256
 canvas_color = "black"
+canvas_text_line_spacing = 10
+canvas_text_left_margin = 2
+limit_viewport = True
 
 # Imports
+import math
 import random
-import Image
+import PIL
+from PIL import ImageFont
+from PIL import Image
+from PIL import ImageDraw
 
 # Data Storage
 canvas = {}
@@ -86,6 +94,7 @@ def tick():
     if frame_counter < max_frames:
         if tick_counter % ticks_per_frame == 0:
             save_frame()
+            print "Tick: " + str(tick_counter) + " Frame: " + str(frame_counter)
 
     # Increment tick counter
     tick_counter += 1
@@ -103,7 +112,7 @@ def save_frame():
     global frame_counter
 
     # Create a blank image
-    frame = Image.new( 'RGBA', (canvas_size, canvas_size), canvas_color)
+    frame = Image.new( 'RGB', (canvas_size, canvas_size), canvas_color)
     
     # Load it as a bitmap
     bitmap = frame.load()
@@ -112,9 +121,20 @@ def save_frame():
     for x in range(frame.size[0]):
         for y in range(frame.size[1]):
             local_atomic_weight = canvas[x, y]['weight']
-            bitmap[x, y] = (local_atomic_weight * 25, local_atomic_weight * 15, local_atomic_weight * 5)
+            if limit_viewport:
+                if ((x - (canvas_size / 2))*(x - (canvas_size / 2))) + ((y - (canvas_size / 2))*(y - (canvas_size / 2))) < (canvas_size / 2)*(canvas_size / 2):
+                    bitmap[x, y] = (local_atomic_weight * 25, local_atomic_weight * 20, local_atomic_weight * 15)
+                else:
+                    bitmap[x, y] = (0, 0, 0)
+            else:
+                bitmap[x, y] = (local_atomic_weight * 25, local_atomic_weight * 20, local_atomic_weight * 15)
 
-    frame.save("frame" + str(str(frame_counter).zfill(5)) + ".png")
+    # Add text overlays
+    overlay = ImageDraw.Draw(frame)
+    overlay.text((canvas_text_left_margin,0), "Chemistry Kit", (255,255,0))
+    overlay.text((canvas_text_left_margin,canvas_text_line_spacing), "Frame " + str(frame_counter), (255,255,0))
+
+    frame.save(output_directory_prefix + "frame" + str(str(frame_counter).zfill(5)) + ".png")
 
     # Increment frame counter
     frame_counter += 1
