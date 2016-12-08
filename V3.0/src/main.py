@@ -16,7 +16,11 @@ import pygame
 # Input #
 #########
 
-force = (math.pi, 0.01) # Force to apply to all particles
+# Simulation
+force = (math.pi, 0.005) # Force to apply to all particles
+
+# Rendering
+particle_image = pygame.image.load("../asset/sphere.png")
 
 ############
 # Settings #
@@ -74,7 +78,10 @@ class Particle:
 		self.y -= math.cos(self.angle) * self.speed
 	
 	def draw(self):
-		pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.radius, 0)
+		image = pygame.transform.scale(particle_image, (self.radius * 2, self.radius * 2))
+		#image = pygame.transform.rotate(image, 0)
+		window.blit(image, (self.x - self.radius, self.y - self.radius))
+		#pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.radius, 0)
 
 #############
 # Variables #
@@ -149,13 +156,13 @@ def init():
 	pygame.display.set_caption(window_caption)
 	
 	for i in range(0,500):
-		particles.append(Particle("Br", randomPosition(), 5, 5, (255, 255, 255)))
+		particles.append(Particle("Br", randomPosition(), 25*3, 5, (255, 255, 255)))
 	for i in range(0,20):
-		particles.append(Particle("Br", randomPosition(), 30, 20, (255, 255, 255)))
+		particles.append(Particle("Br", randomPosition(), 400*3, 20, (255, 255, 255)))
 	for i in range(0,4):
-		particles.append(Particle("Br", randomPosition(), 60, 40, (255, 255, 255)))
+		particles.append(Particle("Br", randomPosition(), 1600*3, 40, (255, 255, 255)))
 	for i in range(0,1):
-		particles.append(Particle("Br", randomPosition(), 1000, 80, (255, 255, 255)))	
+		particles.append(Particle("Br", randomPosition(), 6400*3, 80, (255, 255, 255)))	
 
 def tick():
 	for i, particle in enumerate(particles):
