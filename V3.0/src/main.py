@@ -6,6 +6,8 @@
 # Imports #
 ###########
 import math
+import random
+from random import randint
 import time
 import datetime
 import pygame
@@ -14,7 +16,7 @@ import pygame
 # Input #
 #########
 
-force = (math.pi, 0.1) # Force to apply to all particles
+force = (math.pi, 0.01) # Force to apply to all particles
 
 ############
 # Settings #
@@ -24,10 +26,10 @@ force = (math.pi, 0.1) # Force to apply to all particles
 fps_target = 10 # Frames per second to target
 
 # Physics
-
+field_mass = 0.2
 
 # Rendering
-window_width, window_height = 800, 800 # Dimensions of the window
+window_width, window_height = 1000, 1000 # Dimensions of the window
 window_caption = "Chem Kit - V3.0" # Title of the window
 window_background_color = (0, 0, 0) # Background color of the window
 
@@ -50,6 +52,9 @@ class Particle:
 		# Apply force
 		(self.angle, self.speed) = addVectors((self.angle, self.speed), force)
 	
+		# Apply friction from field
+		#self.speed *= (self.mass / (self.mass + field_mass)) ** X
+	
 		# Check for boundary collisions
 		if self.x > window_width - self.radius:
 			self.x = 2*(window_width - self.radius) - self.x
@@ -69,7 +74,7 @@ class Particle:
 		self.y -= math.cos(self.angle) * self.speed
 	
 	def draw(self):
-		pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.radius, 5)
+		pygame.draw.circle(window, self.color, (int(self.x), int(self.y)), self.radius, 0)
 
 #############
 # Variables #
@@ -143,14 +148,14 @@ def init():
 	window = pygame.display.set_mode((window_width, window_height))
 	pygame.display.set_caption(window_caption)
 	
-	for i in range(0,200):
-		particles.append(Particle("Br", (0, 0), 5, 5, (255, 255, 255)))
+	for i in range(0,500):
+		particles.append(Particle("Br", randomPosition(), 5, 5, (255, 255, 255)))
 	for i in range(0,20):
-		particles.append(Particle("Br", (0, 0), 10, 10, (255, 255, 255)))
-	for i in range(0,20):
-		particles.append(Particle("Br", (0, 0), 20, 20, (255, 255, 255)))
-	for i in range(0,2):
-		particles.append(Particle("Br", (0, 0), 50, 50, (255, 255, 255)))	
+		particles.append(Particle("Br", randomPosition(), 30, 20, (255, 255, 255)))
+	for i in range(0,4):
+		particles.append(Particle("Br", randomPosition(), 60, 40, (255, 255, 255)))
+	for i in range(0,1):
+		particles.append(Particle("Br", randomPosition(), 1000, 80, (255, 255, 255)))	
 
 def tick():
 	for i, particle in enumerate(particles):
@@ -172,8 +177,24 @@ def draw():
 # Functions #
 #############
 
+def chance(probability):
+	return random.random() < probability
+
+def translate(value, leftMin, leftMax, rightMin, rightMax):
+	leftSpan = leftMax - leftMin
+	rightSpan = rightMax - rightMin
+	valueScaled = float(value - leftMin) / float(leftSpan)
+
+	return rightMin + (valueScaled * rightSpan)
+
+def clamp(value, minimum, maximum):
+	return max(minimum, min(maximum, value))
+
 def dist((x1, y1), (x2, y2)):
     return math.hypot(x1 - x2, y1 - y2), x1 - x2, y1 - y2
+
+def randomPosition():
+	return (randint(0, window_width), randint(0, window_height))
 
 def addVectors((a1, l1), (a2, l2)):
 	x  = math.sin(a1) * l1 + math.sin(a2) * l2
