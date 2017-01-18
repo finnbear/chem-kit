@@ -1,7 +1,7 @@
 # Chem Kit V3.0 - main.py
 # Author: Finn Bear
 # Date: December 7, 2016
-version = "3.3"
+version = "3.4"
 
 ###########
 # Imports #
@@ -23,7 +23,7 @@ pygame.font.init()
 # Simulation
 force = (math.pi, 0.01) # Force to apply to all particles 
 
-membrane = False # Whether a membrane exists
+membrane = True # Whether a membrane exists
 membrane_position = 0.5 # A percentage of window height
 membrane_velocity = 0 # Velocity of the membrane
 membrane_velocity_max = 0.05 # Max velocity of the membrane
@@ -45,7 +45,7 @@ fps_target = 10 # Frames per second to target
 field_mass = 0.01
 
 # Rendering
-save_video = True
+save_video = False
 window_width, window_height = 1000, 1000 # Dimensions of the window
 window_caption = "Chem Kit - V3.0" # Title of the window
 window_background_color = (0, 0, 0) # Background color of the window
