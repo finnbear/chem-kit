@@ -341,20 +341,20 @@ def membraneCollide(particle):
 	particleBottom = particle.y + particle.radius
 
 	# Check if particle intersects membrane
-	if particleTop > membraneTop and particleTop < membraneBottom:
-		# Particle has collided from the bottom
-		particle.angle = math.pi - particle.angle
-		membrane_velocity -= (particle.speed * particle.mass) / membrane_mass
+	if (particleTop > membraneTop and particleTop < membraneBottom) or (particleBottom < membraneBottom and particleBottom > membraneTop):
+		# Particle has collided with the membrane
+		# Check which direction the particle was travelling
+		particleVelocityY = -1 * particle.speed * math.cos(particle.angle)
 
-		# Boost particle to correct for missed collision
-		particle.y += membraneBottom - particleTop
-	elif particleBottom < membraneBottom and particleBottom > membraneTop:
-		# Particle has collided from the top
-		particle.angle = math.pi - particle.angle
-		membrane_velocity += (particle.speed * particle.mass) / membrane_mass
+		if particleVelocityY < 0:
+			membrane_velocity += (particleVelocityY * particle.mass) / membrane_mass
+			particle.y += membraneBottom - particleTop
+		elif particleVelocityY > 0:
+			membrane_velocity -= (particleVelocityY * particle.mass) / membrane_mass
+			particle.y -= particleBottom - membraneTop
 
-		# Boost particle to correct for missed collision
-		particle.y -= particleBottom - membraneTop
+		# Bounce particle
+		particle.angle = math.pi - particle.angle
 	
 
 def temperatureGauge():
