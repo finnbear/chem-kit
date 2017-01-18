@@ -1,7 +1,7 @@
 # Chem Kit V3.0 - main.py
 # Author: Finn Bear
 # Date: December 7, 2016
-version = "3.1"
+version = "3.3"
 
 ###########
 # Imports #
@@ -21,7 +21,15 @@ pygame.font.init()
 #########
 
 # Simulation
-force = (math.pi, 0.01) # Force to apply to all particles
+force = (math.pi, 0.01) # Force to apply to all particles 
+
+membrane = False # Whether a membrane exists
+membrane_position = 0.5 # A percentage of window height
+membrane_velocity = 0 # Velocity of the membrane
+membrane_velocity_max = 0.05 # Max velocity of the membrane
+membrane_friction_factor = 0.5 # Friction factor applied to the membrane's velocity
+membrane_width = 50 # Width of the membrane
+membrane_mass = 10000000 # Mass of membrane
 
 # Rendering
 particle_image = pygame.image.load("../asset/sphere.png")
@@ -56,8 +64,8 @@ class Particle:
 		self.type = type
 		self.x = x
 		self.y = y
-		self.angle = 0
-		self.speed = 0
+		self.angle = randomDirection()
+		self.speed = randomSpeed()
 		self.mass = mass
 		self.radius = radius
 		self.color = color
@@ -185,19 +193,21 @@ def init():
 	pygame.display.set_caption(window_caption)
 	
 	for i in range(0,100):
-		particles.append(Particle("Br", randomPosition(), 20, 5, (255, 255, 255)))
+		particles.append(Particle("Br", randomPosition(), 20, 6, (255, 255, 255)))
 	for i in range(0,10):
 		particles.append(Particle("Br", randomPosition(), 300, 20, (255, 255, 255)))
 	for i in range(0,2):
-		particles.append(Particle("Br", randomPosition(), 40000, 40, (255, 255, 255)))
+		particles.append(Particle("Br", randomPosition(), 4000, 40, (255, 255, 255)))
 	for i in range(0,1):
-		particles.append(Particle("Br", randomPosition(), 500000, 60, (255, 255, 255)))	
+		particles.append(Particle("Br", randomPosition(), 50000, 50, (255, 255, 255)))	
 
 def tick():
 	global total_speed
 	global max_total_speed
 	global total_pressure
 	global max_total_pressure
+	global membrane_position
+	global membrane_velocity
 	
 	# Reset totals
 	total_speed = 0
@@ -206,9 +216,22 @@ def tick():
 	for i, particle in enumerate(particles):
 		total_speed += particle.speed
 		particle.update()
+		if membrane:
+			membraneCollide(particle)
 		for particle2 in particles[i+1:]:
 			collide(particle, particle2)
 			
+	# Simulate membrane
+	if membrane:
+		# Clamp membrane velocity
+		membrane_velocity = clamp(membrane_velocity, -membrane_velocity_max, membrane_velocity_max)
+		
+		# Apply membrane velocity
+		membrane_position += membrane_velocity
+
+		# Apply friction to membrane
+		membrane_velocity *= membrane_friction_factor
+
 	# Reset maximums
 	max_total_speed = max(max_total_speed, total_speed)
 	max_total_pressure = max(max_total_pressure, total_pressure)
@@ -221,6 +244,9 @@ def draw():
 	# Draw particles
 	for particle in particles:
 		particle.draw()
+
+	if membrane:
+		pygame.draw.rect(window,(200,200,255),(0,membrane_position * window_height + membrane_width / float(-2),window_width,membrane_width), 0)
 
 	# Create procedural overlays (Text)
 	window_temperature_gauge = font.render("Temperature: " + str(round(temperatureGauge(), 4)) + "%", 1, font_color)
@@ -261,6 +287,12 @@ def dist((x1, y1), (x2, y2)):
 def randomPosition():
 	return (randint(0, window_width), randint(0, window_height))
 
+def randomSpeed():
+	return translate(randint(0, 100), 0, 100, 0, 10)
+
+def randomDirection():
+	return translate(randint(0, 360), 0, 360, 0, math.pi * 2)
+
 def addVectors((a1, l1), (a2, l2)):
 	x  = math.sin(a1) * l1 + math.sin(a2) * l2
 	y  = math.cos(a1) * l1 + math.cos(a2) * l2
@@ -281,7 +313,7 @@ def collide(particle1, particle2):
 		(particle1.angle, particle1.speed) = addVectors((particle1.angle, particle1.speed*(particle1.mass-particle2.mass)/total_mass), (angle, 2*particle2.speed*particle2.mass/total_mass))
 		(particle2.angle, particle2.speed) = addVectors((particle2.angle, particle2.speed*(particle2.mass-particle1.mass)/total_mass), (angle+math.pi, 2*particle1.speed*particle1.mass/total_mass))
 		
-		# Fake the missed collision :D
+		# Mathematically correct missed colllision
 		overlap = (particle1.radius + particle2.radius - distance+1)
 		if (particle1.radius < particle2.radius):
 			particle1.x += math.sin(angle)*overlap
@@ -296,12 +328,40 @@ def collide(particle1, particle2):
 			particle2.x -= math.sin(angle)*overlap
 			particle2.y += math.cos(angle)*overlap
 		
+def membraneCollide(particle):
+	global membrane_velocity
+
+	# Collect information about the particle and the membrane
+	# Keep in mind the upside-down coordinate system
+	# These calculations deal with Y coordinates only
+	membraneTop = (membrane_position * window_height) - (membrane_width / float(2))
+	membraneBottom = (membrane_position * window_height) + (membrane_width / float(2))
+
+	particleTop = particle.y - particle.radius
+	particleBottom = particle.y + particle.radius
+
+	# Check if particle intersects membrane
+	if particleTop > membraneTop and particleTop < membraneBottom:
+		# Particle has collided from the bottom
+		particle.angle = math.pi - particle.angle
+		membrane_velocity -= (particle.speed * particle.mass) / membrane_mass
+
+		# Boost particle to correct for missed collision
+		particle.y += membraneBottom - particleTop
+	elif particleBottom < membraneBottom and particleBottom > membraneTop:
+		# Particle has collided from the top
+		particle.angle = math.pi - particle.angle
+		membrane_velocity += (particle.speed * particle.mass) / membrane_mass
+
+		# Boost particle to correct for missed collision
+		particle.y -= particleBottom - membraneTop
+	
+
 def temperatureGauge():
 	return (float(1) / (1 + math.exp(-0.05 * total_speed / len(particles))) - 0.5) * 200
 
 def pressureGauge():
 	return (float(1) / (1 + math.exp(-0.000001 * total_pressure)) - 0.5) * 200
-
 
 ###########
 # Program #
