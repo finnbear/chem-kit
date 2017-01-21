@@ -1,7 +1,7 @@
 # Chem Kit V3.0 - main.py
 # Author: Finn Bear
 # Date: December 7, 2016
-version = "3.4"
+version = "3.5"
 
 ###########
 # Imports #
@@ -26,10 +26,10 @@ force = (math.pi, 0.01) # Force to apply to all particles
 membrane = True # Whether a membrane exists
 membrane_position = 0.5 # A percentage of window height
 membrane_velocity = 0 # Velocity of the membrane
-membrane_velocity_max = 0.05 # Max velocity of the membrane
+membrane_velocity_max = 0.02 # Max velocity of the membrane
 membrane_friction_factor = 0.5 # Friction factor applied to the membrane's velocity
 membrane_width = 50 # Width of the membrane
-membrane_mass = 10000000 # Mass of membrane
+membrane_mass = 1000000 # Mass of membrane
 
 # Rendering
 particle_image = pygame.image.load("../asset/sphere.png")
@@ -39,15 +39,15 @@ particle_image = pygame.image.load("../asset/sphere.png")
 ############
 
 # Simulation
-fps_target = 10 # Frames per second to target
+fps_target = 15 # Frames per second to target
 
 # Physics
 field_mass = 0.01
 
 # Rendering
-save_video = False
+save_video = True
 window_width, window_height = 1000, 1000 # Dimensions of the window
-window_caption = "Chem Kit - V3.0" # Title of the window
+window_caption = "Chem Kit - V" + version # Title of the window
 window_background_color = (0, 0, 0) # Background color of the window
 font, font_color = pygame.font.SysFont("monospace", 15, bold=True), (255, 55, 55)
 window_title, window_title_position = font.render("Virtual Chemistry - v" + version, 1, font_color), (10, 10)
@@ -192,9 +192,9 @@ def init():
 	window = pygame.display.set_mode((window_width, window_height))
 	pygame.display.set_caption(window_caption)
 	
-	for i in range(0,100):
+	for i in range(0,150):
 		particles.append(Particle("Br", randomPosition(), 20, 6, (255, 255, 255)))
-	for i in range(0,10):
+	for i in range(0,15):
 		particles.append(Particle("Br", randomPosition(), 300, 20, (255, 255, 255)))
 	for i in range(0,2):
 		particles.append(Particle("Br", randomPosition(), 4000, 40, (255, 255, 255)))
@@ -305,7 +305,7 @@ def collide(particle1, particle2):
 	distance, dx, dy = dist((particle1.x, particle1.y), (particle2.x, particle2.y))
 	
 	# Check for collision
-	if distance <= particle1.radius + particle2.radius:
+	if distance <= particle1.radius + particle2.radius + 0.5:
 		angle = math.atan2(dy, dx) + 0.5 * math.pi
 		total_mass = particle1.mass + particle2.mass
 		
@@ -341,17 +341,27 @@ def membraneCollide(particle):
 	particleBottom = particle.y + particle.radius
 
 	# Check if particle intersects membrane
-	if (particleTop > membraneTop and particleTop < membraneBottom) or (particleBottom < membraneBottom and particleBottom > membraneTop):
+	if (particleTop >= membraneTop and particleTop <= membraneBottom) or (particleBottom <= membraneBottom and particleBottom >= membraneTop):
 		# Particle has collided with the membrane
 		# Check which direction the particle was travelling
 		particleVelocityY = -1 * particle.speed * math.cos(particle.angle)
 
-		if particleVelocityY < 0:
+		if particleVelocityY < -1:
+			# Trust velocity
 			membrane_velocity += (particleVelocityY * particle.mass) / membrane_mass
 			particle.y += membraneBottom - particleTop
-		elif particleVelocityY > 0:
-			membrane_velocity -= (particleVelocityY * particle.mass) / membrane_mass
+		elif particleVelocityY > 1:
+			# Trust velocity
+			membrane_velocity += (particleVelocityY * particle.mass) / membrane_mass
 			particle.y -= particleBottom - membraneTop
+		else:
+			# Don't trust velocity
+			if particleTop >= membraneTop and particleTop <= membraneBottom:
+				membrane_velocity -= (particle.speed * particle.mass) / membrane_mass
+				particle.y += membraneBottom - particleTop
+ 			elif particleBottom <= membraneBottom and particleBottom >= membraneTop:
+				membrane_velocity += (particle.speed * particle.mass) / membrane_mass
+				particle.y -= particleBottom - membraneTop
 
 		# Bounce particle
 		particle.angle = math.pi - particle.angle
