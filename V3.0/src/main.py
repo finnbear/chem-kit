@@ -46,6 +46,8 @@ field_mass = 0.01
 
 # Rendering
 save_video = False
+video_begin_tick = 5 # Initial tick to record
+video_end_tick = 1000 # Final tick to record, 0 for infinite
 window_width, window_height = 1000, 1000 # Dimensions of the window
 window_caption = "Chem Kit - V" + version # Title of the window
 window_background_color = (0, 0, 0) # Background color of the window
@@ -169,7 +171,8 @@ def main():
 			time.sleep(spf_target - tDelta.total_seconds())
 		
 		# Draw window
-		draw()
+		if draw() == False:
+			running = False
 		
 		# Log time after draw
 		t2 = datetime.datetime.now()
@@ -191,7 +194,7 @@ def init():
 
 	window = pygame.display.set_mode((window_width, window_height))
 	pygame.display.set_caption(window_caption)
-	
+
 	for i in range(0,150):
 		particles.append(Particle("Br", randomPosition(), 20, 6, (255, 255, 255)))
 	for i in range(0,15):
@@ -258,10 +261,14 @@ def draw():
 	window.blit(window_temperature_gauge, window_temperature_gauge_position)
 	window.blit(window_pressure_gauge, window_pressure_gauge_position)
 
-	if save_video:
-		pygame.image.save(window, '../out/frame-%05d.png' % (tick_counter))
+	if save_video and tick_counter >= video_begin_tick:
+		if tick_counter <= video_end_tick:
+			pygame.image.save(window, '../out/frame-%05d.png' % (tick_counter - video_begin_tick))
+		else:
+			return False
 
 	pygame.display.flip()
+	return True
 	
 
 #############
@@ -282,7 +289,7 @@ def clamp(value, minimum, maximum):
 	return max(minimum, min(maximum, value))
 
 def dist((x1, y1), (x2, y2)):
-    return math.hypot(x1 - x2, y1 - y2), x1 - x2, y1 - y2
+	return math.hypot(x1 - x2, y1 - y2), x1 - x2, y1 - y2
 
 def randomPosition():
 	return (randint(0, window_width), randint(0, window_height))
@@ -294,8 +301,8 @@ def randomDirection():
 	return translate(randint(0, 360), 0, 360, 0, math.pi * 2)
 
 def addVectors((a1, l1), (a2, l2)):
-	x  = math.sin(a1) * l1 + math.sin(a2) * l2
-	y  = math.cos(a1) * l1 + math.cos(a2) * l2
+	x = math.sin(a1) * l1 + math.sin(a2) * l2
+	y = math.cos(a1) * l1 + math.cos(a2) * l2
 	length = math.hypot(x, y)
 	angle = 0.5 * math.pi - math.atan2(y, x)
 	return (angle, length)
