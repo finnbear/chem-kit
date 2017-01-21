@@ -46,7 +46,6 @@ field_mass = 0.01
 
 # Rendering
 save_video = True
-video_frame = 0 # Current frame
 video_begin_tick = 5 # Initial tick to record
 video_end_tick = 10 # Final tick to record, 0 for infinite
 window_width, window_height = 1000, 1000 # Dimensions of the window
