@@ -45,7 +45,7 @@ fps_target = 15 # Frames per second to target
 field_mass = 0.01
 
 # Rendering
-save_video = True
+save_video = False
 window_width, window_height = 1000, 1000 # Dimensions of the window
 window_caption = "Chem Kit - V" + version # Title of the window
 window_background_color = (0, 0, 0) # Background color of the window
